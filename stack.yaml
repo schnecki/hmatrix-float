@@ -1,0 +1,8 @@
+flags:
+  hmatrix:
+    openblas: false
+packages:
+- '.'
+extra-deps: []
+resolver: lts-13.21
+
