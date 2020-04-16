@@ -46,8 +46,8 @@ type TMMM t = t ::> t ::> t ::> Ok
 type F = Float
 type Q = Complex Float
 
-foreign import ccall unsafe "multiplyR" dgemmc :: CInt -> CInt -> TMMM R
-foreign import ccall unsafe "multiplyC" zgemmc :: CInt -> CInt -> TMMM C
+-- foreign import ccall unsafe "multiplyR" dgemmc :: CInt -> CInt -> TMMM R
+-- foreign import ccall unsafe "multiplyC" zgemmc :: CInt -> CInt -> TMMM C
 foreign import ccall unsafe "multiplyF" sgemmc :: CInt -> CInt -> TMMM F
 foreign import ccall unsafe "multiplyQ" cgemmc :: CInt -> CInt -> TMMM Q
 foreign import ccall unsafe "multiplyI" c_multiplyI :: I -> TMMM I
@@ -66,13 +66,13 @@ multiplyAux f st a b = unsafePerformIO $ do
     ((tt a) # (tt b) #! s) (f (isT a) (isT b)) #| st
     return s
 
--- | Matrix product based on BLAS's /dgemm/.
-multiplyR :: Matrix Float -> Matrix Float -> Matrix Float
-multiplyR a b = {-# SCC "multiplyR" #-} multiplyAux dgemmc "dgemmc" a b
+-- -- | Matrix product based on BLAS's /dgemm/.
+-- multiplyR :: Matrix Float -> Matrix Float -> Matrix Float
+-- multiplyR = multiplyF
 
--- | Matrix product based on BLAS's /zgemm/.
-multiplyC :: Matrix (Complex Float) -> Matrix (Complex Float) -> Matrix (Complex Float)
-multiplyC a b = multiplyAux zgemmc "zgemmc" a b
+-- -- | Matrix product based on BLAS's /zgemm/.
+-- multiplyC :: Matrix (Complex Float) -> Matrix (Complex Float) -> Matrix (Complex Float)
+-- multiplyC = multiplyQ
 
 -- | Matrix product based on BLAS's /sgemm/.
 multiplyF :: Matrix Float -> Matrix Float -> Matrix Float
@@ -102,26 +102,30 @@ multiplyL m a b = unsafePerformIO $ do
 
 type TSVD t = t ::> t ::> R :> t ::> Ok
 
-foreign import ccall unsafe "svd_l_R" dgesvd :: TSVD R
-foreign import ccall unsafe "svd_l_C" zgesvd :: TSVD C
-foreign import ccall unsafe "svd_l_Rdd" dgesdd :: TSVD R
-foreign import ccall unsafe "svd_l_Cdd" zgesdd :: TSVD C
+-- foreign import ccall unsafe "svd_l_R" dgesvd :: TSVD R
+foreign import ccall unsafe "svd_l_S" sgesvd :: TSVD F
+-- foreign import ccall unsafe "svd_l_C" zgesvd :: TSVD C
+foreign import ccall unsafe "svd_l_C" cgesvd :: TSVD C
+-- foreign import ccall unsafe "svd_l_Rdd" dgesdd :: TSVD R
+foreign import ccall unsafe "svd_l_Rdd" sgesdd :: TSVD R
+-- foreign import ccall unsafe "svd_l_Cdd" zgesdd :: TSVD C
+foreign import ccall unsafe "svd_l_Cdd" cgesdd :: TSVD C
 
 -- | Full SVD of a real matrix using LAPACK's /dgesvd/.
 svdR :: Matrix Float -> (Matrix Float, Vector Float, Matrix Float)
-svdR = svdAux dgesvd "svdR"
+svdR = svdAux sgesvd "svdS"
 
 -- | Full SVD of a real matrix using LAPACK's /dgesdd/.
 svdRd :: Matrix Float -> (Matrix Float, Vector Float, Matrix Float)
-svdRd = svdAux dgesdd "svdRdd"
+svdRd = svdAux sgesdd "svdSdd"
 
 -- | Full SVD of a complex matrix using LAPACK's /zgesvd/.
 svdC :: Matrix (Complex Float) -> (Matrix (Complex Float), Vector Float, Matrix (Complex Float))
-svdC = svdAux zgesvd "svdC"
+svdC = svdAux cgesvd "svdC"
 
 -- | Full SVD of a complex matrix using LAPACK's /zgesdd/.
 svdCd :: Matrix (Complex Float) -> (Matrix (Complex Float), Vector Float, Matrix (Complex Float))
-svdCd = svdAux zgesdd "svdCdd"
+svdCd = svdAux cgesdd "svdCdd"
 
 svdAux f st x = unsafePerformIO $ do
     a <- copy ColumnMajor x
@@ -137,19 +141,19 @@ svdAux f st x = unsafePerformIO $ do
 
 -- | Thin SVD of a real matrix, using LAPACK's /dgesvd/ with jobu == jobvt == \'S\'.
 thinSVDR :: Matrix Float -> (Matrix Float, Vector Float, Matrix Float)
-thinSVDR = thinSVDAux dgesvd "thinSVDR"
+thinSVDR = thinSVDAux sgesvd "thinSVDR"
 
 -- | Thin SVD of a complex matrix, using LAPACK's /zgesvd/ with jobu == jobvt == \'S\'.
 thinSVDC :: Matrix (Complex Float) -> (Matrix (Complex Float), Vector Float, Matrix (Complex Float))
-thinSVDC = thinSVDAux zgesvd "thinSVDC"
+thinSVDC = thinSVDAux cgesvd "thinSVDC"
 
 -- | Thin SVD of a real matrix, using LAPACK's /dgesdd/ with jobz == \'S\'.
 thinSVDRd :: Matrix Float -> (Matrix Float, Vector Float, Matrix Float)
-thinSVDRd = thinSVDAux dgesdd "thinSVDRdd"
+thinSVDRd = thinSVDAux sgesdd "thinSVDRdd"
 
 -- | Thin SVD of a complex matrix, using LAPACK's /zgesdd/ with jobz == \'S\'.
 thinSVDCd :: Matrix (Complex Float) -> (Matrix (Complex Float), Vector Float, Matrix (Complex Float))
-thinSVDCd = thinSVDAux zgesdd "thinSVDCdd"
+thinSVDCd = thinSVDAux cgesdd "thinSVDCdd"
 
 thinSVDAux f st x = unsafePerformIO $ do
     a <- copy ColumnMajor x
@@ -166,19 +170,19 @@ thinSVDAux f st x = unsafePerformIO $ do
 
 -- | Singular values of a real matrix, using LAPACK's /dgesvd/ with jobu == jobvt == \'N\'.
 svR :: Matrix Float -> Vector Float
-svR = svAux dgesvd "svR"
+svR = svAux sgesvd "svR"
 
 -- | Singular values of a complex matrix, using LAPACK's /zgesvd/ with jobu == jobvt == \'N\'.
 svC :: Matrix (Complex Float) -> Vector Float
-svC = svAux zgesvd "svC"
+svC = svAux cgesvd "svC"
 
 -- | Singular values of a real matrix, using LAPACK's /dgesdd/ with jobz == \'N\'.
 svRd :: Matrix Float -> Vector Float
-svRd = svAux dgesdd "svRd"
+svRd = svAux sgesdd "svRd"
 
 -- | Singular values of a complex matrix, using LAPACK's /zgesdd/ with jobz == \'N\'.
 svCd :: Matrix (Complex Float) -> Vector Float
-svCd = svAux zgesdd "svCd"
+svCd = svAux cgesdd "svCd"
 
 svAux f st x = unsafePerformIO $ do
     a <- copy ColumnMajor x
@@ -194,11 +198,11 @@ svAux f st x = unsafePerformIO $ do
 
 -- | Singular values and all right singular vectors of a real matrix, using LAPACK's /dgesvd/ with jobu == \'N\' and jobvt == \'A\'.
 rightSVR :: Matrix Float -> (Vector Float, Matrix Float)
-rightSVR = rightSVAux dgesvd "rightSVR"
+rightSVR = rightSVAux sgesvd "rightSVR"
 
 -- | Singular values and all right singular vectors of a complex matrix, using LAPACK's /zgesvd/ with jobu == \'N\' and jobvt == \'A\'.
 rightSVC :: Matrix (Complex Float) -> (Vector Float, Matrix (Complex Float))
-rightSVC = rightSVAux zgesvd "rightSVC"
+rightSVC = rightSVAux cgesvd "rightSVC"
 
 rightSVAux f st x = unsafePerformIO $ do
     a <- copy ColumnMajor x
@@ -215,11 +219,11 @@ rightSVAux f st x = unsafePerformIO $ do
 
 -- | Singular values and all left singular vectors of a real matrix, using LAPACK's /dgesvd/  with jobu == \'A\' and jobvt == \'N\'.
 leftSVR :: Matrix Float -> (Matrix Float, Vector Float)
-leftSVR = leftSVAux dgesvd "leftSVR"
+leftSVR = leftSVAux sgesvd "leftSVR"
 
 -- | Singular values and all left singular vectors of a complex matrix, using LAPACK's /zgesvd/ with jobu == \'A\' and jobvt == \'N\'.
 leftSVC :: Matrix (Complex Float) -> (Matrix (Complex Float), Vector Float)
-leftSVC = leftSVAux zgesvd "leftSVC"
+leftSVC = leftSVAux cgesvd "leftSVC"
 
 leftSVAux f st x = unsafePerformIO $ do
     a <- copy ColumnMajor x
@@ -235,12 +239,20 @@ leftSVAux f st x = unsafePerformIO $ do
 
 -----------------------------------------------------------------------------
 
-foreign import ccall unsafe "eig_l_R" dgeev :: R ::> R ::> C :> R ::> Ok
-foreign import ccall unsafe "eig_l_G" dggev :: R ::> R ::> C :> R :> R ::> R ::> Ok
-foreign import ccall unsafe "eig_l_C" zgeev :: C ::> C ::> C :> C ::> Ok
-foreign import ccall unsafe "eig_l_GC" zggev :: C ::> C ::> C :> C :> C ::> C ::> Ok
-foreign import ccall unsafe "eig_l_S" dsyev :: CInt -> R :> R ::> Ok
-foreign import ccall unsafe "eig_l_H" zheev :: CInt -> R :> C ::> Ok
+-- foreign import ccall unsafe "eig_l_R" dgeev :: R ::> R ::> C :> R ::> Ok
+-- foreign import ccall unsafe "eig_l_G" dggev :: R ::> R ::> C :> R :> R ::> R ::> Ok
+-- foreign import ccall unsafe "eig_l_C" zgeev :: C ::> C ::> C :> C ::> Ok
+-- foreign import ccall unsafe "eig_l_GC" zggev :: C ::> C ::> C :> C :> C ::> C ::> Ok
+-- foreign import ccall unsafe "eig_l_S" dsyev :: CInt -> R :> R ::> Ok
+-- foreign import ccall unsafe "eig_l_H" zheev :: CInt -> R :> C ::> Ok
+
+foreign import ccall unsafe "eig_l_R" sgeev :: R ::> R ::> C :> R ::> Ok
+foreign import ccall unsafe "eig_l_G" sggev :: R ::> R ::> C :> R :> R ::> R ::> Ok
+foreign import ccall unsafe "eig_l_C" cgeev :: C ::> C ::> C :> C ::> Ok
+foreign import ccall unsafe "eig_l_GC" cggev :: C ::> C ::> C :> C :> C ::> C ::> Ok
+foreign import ccall unsafe "eig_l_S" ssyev :: CInt -> R :> R ::> Ok
+foreign import ccall unsafe "eig_l_H" cheev :: CInt -> R :> C ::> Ok
+
 
 eigAux f st m = unsafePerformIO $ do
     a <- copy ColumnMajor m
@@ -256,7 +268,7 @@ eigAux f st m = unsafePerformIO $ do
 -- | Eigenvalues and right eigenvectors of a general complex matrix, using LAPACK's /zgeev/.
 -- The eigenvectors are the columns of v. The eigenvalues are not sorted.
 eigC :: Matrix (Complex Float) -> (Vector (Complex Float), Matrix (Complex Float))
-eigC = eigAux zgeev "eigC"
+eigC = eigAux cgeev "eigC"
 
 eigOnlyAux f st m = unsafePerformIO $ do
     a <- copy ColumnMajor m
@@ -270,7 +282,7 @@ eigOnlyAux f st m = unsafePerformIO $ do
 -- | Eigenvalues of a general complex matrix, using LAPACK's /zgeev/ with jobz == \'N\'.
 -- The eigenvalues are not sorted.
 eigOnlyC :: Matrix (Complex Float) -> Vector (Complex Float)
-eigOnlyC = eigOnlyAux zgeev "eigOnlyC"
+eigOnlyC = eigOnlyAux cgeev "eigOnlyC"
 
 -- | Eigenvalues and right eigenvectors of a general real matrix, using LAPACK's /dgeev/.
 -- The eigenvectors are the columns of v. The eigenvalues are not sorted.
@@ -290,7 +302,7 @@ eigRaux m = unsafePerformIO $ do
     return (l,v)
   where
     r = rows m
-    g ra ca xra xca pa = dgeev ra ca xra xca pa 0 0 0 0 nullPtr
+    g ra ca xra xca pa = sgeev ra ca xra xca pa 0 0 0 0 nullPtr
 
 fixeig1 s = toComplex' (subVector 0 r (asReal s), subVector r r (asReal s))
     where r = dim s
@@ -315,14 +327,14 @@ fixeigG _ _ = error "fixeigG with impossible inputs"
 -- | Eigenvalues of a general real matrix, using LAPACK's /dgeev/ with jobz == \'N\'.
 -- The eigenvalues are not sorted.
 eigOnlyR :: Matrix Float -> Vector (Complex Float)
-eigOnlyR = fixeig1 . eigOnlyAux dgeev "eigOnlyR"
+eigOnlyR = fixeig1 . eigOnlyAux sgeev "eigOnlyR"
 
 -- | Generalized eigenvalues and right eigenvectors of a pair of real matrices, using LAPACK's /dggev/.
 -- The eigenvectors are the columns of v. The eigenvalues are represented as alphas / betas and not sorted.
 eigG :: Matrix Float -> Matrix Float -> (Vector (Complex Float), Vector Float, Matrix (Complex Float))
 eigG a b = (alpha', beta, v'')
   where
-    (alpha, beta, v) = eigGaux dggev a b "eigG"
+    (alpha, beta, v) = eigGaux sggev a b "eigG"
     alpha' = fixeig1 alpha
     v' = toRows $ trans v
     v'' = fromColumns $ fixeigG (toList alpha') v'
@@ -357,13 +369,13 @@ eigGOnlyAux f ma mb st = unsafePerformIO $ do
 -- | Generalized eigenvalues and right eigenvectors of a pair of complex matrices, using LAPACK's /zggev/.
 -- The eigenvectors are the columns of v. The eigenvalues are represented as alphas / betas and not sorted.
 eigGC :: Matrix (Complex Float) -> Matrix (Complex Float) -> (Vector (Complex Float), Vector (Complex Float), Matrix (Complex Float))
-eigGC a b = eigGaux zggev a b "eigGC"
+eigGC a b = eigGaux cggev a b "eigGC"
 
 eigOnlyG :: Matrix Float -> Matrix Float -> (Vector (Complex Float), Vector Float)
-eigOnlyG a b = first fixeig1 $ eigGOnlyAux dggev a b "eigOnlyG"
+eigOnlyG a b = first fixeig1 $ eigGOnlyAux sggev a b "eigOnlyG"
 
 eigOnlyGC :: Matrix (Complex Float) -> Matrix (Complex Float) -> (Vector (Complex Float), Vector (Complex Float))
-eigOnlyGC a b = eigGOnlyAux zggev a b "eigOnlyGC"
+eigOnlyGC a b = eigGOnlyAux cggev a b "eigOnlyGC"
 
 -----------------------------------------------------------------------------
 
@@ -385,7 +397,7 @@ eigS m = (s', fliprl v)
 
 -- | 'eigS' in ascending order
 eigS' :: Matrix Float -> (Vector Float, Matrix Float)
-eigS' = eigSHAux (dsyev 1) "eigS'"
+eigS' = eigSHAux (ssyev 1) "eigS'"
 
 -- | Eigenvalues and right eigenvectors of a hermitian complex matrix, using LAPACK's /zheev/.
 -- The eigenvectors are the columns of v.
@@ -398,24 +410,26 @@ eigH m = (s', fliprl v)
 
 -- | 'eigH' in ascending order
 eigH' :: Matrix (Complex Float) -> (Vector Float, Matrix (Complex Float))
-eigH' = eigSHAux (zheev 1) "eigH'"
+eigH' = eigSHAux (cheev 1) "eigH'"
 
 
 -- | Eigenvalues of a symmetric real matrix, using LAPACK's /dsyev/ with jobz == \'N\'.
 -- The eigenvalues are sorted in descending order.
 eigOnlyS :: Matrix Float -> Vector Float
-eigOnlyS = vrev . fst. eigSHAux (dsyev 0) "eigS'"
+eigOnlyS = vrev . fst. eigSHAux (ssyev 0) "eigS'"
 
 -- | Eigenvalues of a hermitian complex matrix, using LAPACK's /zheev/ with jobz == \'N\'.
 -- The eigenvalues are sorted in descending order.
 eigOnlyH :: Matrix (Complex Float) -> Vector Float
-eigOnlyH = vrev . fst. eigSHAux (zheev 0) "eigH'"
+eigOnlyH = vrev . fst. eigSHAux (cheev 0) "eigH'"
 
 vrev = flatten . flipud . reshape 1
 
 -----------------------------------------------------------------------------
-foreign import ccall unsafe "linearSolveR_l" dgesv :: R ::> R ::> Ok
-foreign import ccall unsafe "linearSolveC_l" zgesv :: C ::> C ::> Ok
+-- foreign import ccall unsafe "linearSolveR_l" dgesv :: R ::> R ::> Ok
+-- foreign import ccall unsafe "linearSolveC_l" zgesv :: C ::> C ::> Ok
+foreign import ccall unsafe "linearSolveR_l" sgesv :: R ::> R ::> Ok
+foreign import ccall unsafe "linearSolveC_l" cgesv :: C ::> C ::> Ok
 
 linearSolveSQAux g f st a b
     | n1==n2 && n1==r = unsafePerformIO . g $ do
@@ -431,18 +445,18 @@ linearSolveSQAux g f st a b
 
 -- | Solve a real linear system (for square coefficient matrix and several right-hand sides) using the LU decomposition, based on LAPACK's /dgesv/. For underconstrained or overconstrained systems use 'linearSolveLSR' or 'linearSolveSVDR'. See also 'lusR'.
 linearSolveR :: Matrix Float -> Matrix Float -> Matrix Float
-linearSolveR a b = linearSolveSQAux id dgesv "linearSolveR" a b
+linearSolveR a b = linearSolveSQAux id sgesv "linearSolveR" a b
 
 mbLinearSolveR :: Matrix Float -> Matrix Float -> Maybe (Matrix Float)
-mbLinearSolveR a b = linearSolveSQAux mbCatch dgesv "linearSolveR" a b
+mbLinearSolveR a b = linearSolveSQAux mbCatch sgesv "linearSolveR" a b
 
 
 -- | Solve a complex linear system (for square coefficient matrix and several right-hand sides) using the LU decomposition, based on LAPACK's /zgesv/. For underconstrained or overconstrained systems use 'linearSolveLSC' or 'linearSolveSVDC'. See also 'lusC'.
 linearSolveC :: Matrix (Complex Float) -> Matrix (Complex Float) -> Matrix (Complex Float)
-linearSolveC a b = linearSolveSQAux id zgesv "linearSolveC" a b
+linearSolveC a b = linearSolveSQAux id cgesv "linearSolveC" a b
 
 mbLinearSolveC :: Matrix (Complex Float) -> Matrix (Complex Float) -> Maybe (Matrix (Complex Float))
-mbLinearSolveC a b = linearSolveSQAux mbCatch zgesv "linearSolveC" a b
+mbLinearSolveC a b = linearSolveSQAux mbCatch cgesv "linearSolveC" a b
 
 --------------------------------------------------------------------------------
 foreign import ccall unsafe "cholSolveR_l" dpotrs  :: R ::> R ::> Ok
@@ -524,10 +538,16 @@ triDiagSolveC dl d du b = linearSolveGTAux2 id zgttrs "triDiagSolveC" dl d du b
 
 -----------------------------------------------------------------------------------
 
-foreign import ccall unsafe "linearSolveLSR_l"   dgels ::           R ::> R ::> Ok
-foreign import ccall unsafe "linearSolveLSC_l"   zgels ::           C ::> C ::> Ok
-foreign import ccall unsafe "linearSolveSVDR_l" dgelss :: Float -> R ::> R ::> Ok
-foreign import ccall unsafe "linearSolveSVDC_l" zgelss :: Float -> C ::> C ::> Ok
+-- foreign import ccall unsafe "linearSolveLSR_l"   dgels ::           R ::> R ::> Ok
+-- foreign import ccall unsafe "linearSolveLSC_l"   zgels ::           C ::> C ::> Ok
+-- foreign import ccall unsafe "linearSolveSVDR_l" dgelss :: Double -> R ::> R ::> Ok
+-- foreign import ccall unsafe "linearSolveSVDC_l" zgelss :: Double -> C ::> C ::> Ok
+
+foreign import ccall unsafe "linearSolveLSR_l"   sgels ::          R ::> R ::> Ok
+foreign import ccall unsafe "linearSolveLSC_l"   cgels ::          C ::> C ::> Ok
+foreign import ccall unsafe "linearSolveSVDR_l" sgelss :: Float -> R ::> R ::> Ok
+foreign import ccall unsafe "linearSolveSVDC_l" cgelss :: Float -> C ::> C ::> Ok
+
 
 linearSolveAux f st a b
     | m == rows b = unsafePerformIO $ do
@@ -545,12 +565,12 @@ linearSolveAux f st a b
 -- | Least squared error solution of an overconstrained real linear system, or the minimum norm solution of an underconstrained system, using LAPACK's /dgels/. For rank-deficient systems use 'linearSolveSVDR'.
 linearSolveLSR :: Matrix Float -> Matrix Float -> Matrix Float
 linearSolveLSR a b = subMatrix (0,0) (cols a, cols b) $
-                     linearSolveAux dgels "linearSolverLSR" a b
+                     linearSolveAux sgels "linearSolverLSR" a b
 
 -- | Least squared error solution of an overconstrained complex linear system, or the minimum norm solution of an underconstrained system, using LAPACK's /zgels/. For rank-deficient systems use 'linearSolveSVDC'.
 linearSolveLSC :: Matrix (Complex Float) -> Matrix (Complex Float) -> Matrix (Complex Float)
 linearSolveLSC a b = subMatrix (0,0) (cols a, cols b) $
-                     linearSolveAux zgels "linearSolveLSC" a b
+                     linearSolveAux cgels "linearSolveLSC" a b
 
 -- | Minimum norm solution of a general real linear least squares problem Ax=B using the SVD, based on LAPACK's /dgelss/. Admits rank-deficient systems but it is slower than 'linearSolveLSR'. The effective rank of A is determined by treating as zero those singular valures which are less than rcond times the largest singular value. If rcond == Nothing machine precision is used.
 linearSolveSVDR :: Maybe Float   -- ^ rcond
@@ -558,7 +578,7 @@ linearSolveSVDR :: Maybe Float   -- ^ rcond
                 -> Matrix Float  -- ^ right hand sides (as columns)
                 -> Matrix Float  -- ^ solution vectors (as columns)
 linearSolveSVDR (Just rcond) a b = subMatrix (0,0) (cols a, cols b) $
-                                   linearSolveAux (dgelss rcond) "linearSolveSVDR" a b
+                                   linearSolveAux (sgelss rcond) "linearSolveSVDR" a b
 linearSolveSVDR Nothing a b = linearSolveSVDR (Just (-1)) a b
 
 -- | Minimum norm solution of a general complex linear least squares problem Ax=B using the SVD, based on LAPACK's /zgelss/. Admits rank-deficient systems but it is slower than 'linearSolveLSC'. The effective rank of A is determined by treating as zero those singular valures which are less than rcond times the largest singular value. If rcond == Nothing machine precision is used.
@@ -567,13 +587,16 @@ linearSolveSVDC :: Maybe Float            -- ^ rcond
                 -> Matrix (Complex Float) -- ^ right hand sides (as columns)
                 -> Matrix (Complex Float) -- ^ solution vectors (as columns)
 linearSolveSVDC (Just rcond) a b = subMatrix (0,0) (cols a, cols b) $
-                                   linearSolveAux (zgelss rcond) "linearSolveSVDC" a b
+                                   linearSolveAux (cgelss rcond) "linearSolveSVDC" a b
 linearSolveSVDC Nothing a b = linearSolveSVDC (Just (-1)) a b
 
 -----------------------------------------------------------------------------------
 
-foreign import ccall unsafe "chol_l_H" zpotrf :: C ::> Ok
-foreign import ccall unsafe "chol_l_S" dpotrf :: R ::> Ok
+-- foreign import ccall unsafe "chol_l_H" zpotrf :: C ::> Ok
+-- foreign import ccall unsafe "chol_l_S" dpotrf :: R ::> Ok
+
+foreign import ccall unsafe "chol_l_H" cpotrf :: C ::> Ok
+foreign import ccall unsafe "chol_l_S" spotrf :: R ::> Ok
 
 cholAux f st a = do
     r <- copy ColumnMajor a
@@ -582,34 +605,38 @@ cholAux f st a = do
 
 -- | Cholesky factorization of a complex Hermitian positive definite matrix, using LAPACK's /zpotrf/.
 cholH :: Matrix (Complex Float) -> Matrix (Complex Float)
-cholH = unsafePerformIO . cholAux zpotrf "cholH"
+cholH = unsafePerformIO . cholAux cpotrf "cholH"
 
 -- | Cholesky factorization of a real symmetric positive definite matrix, using LAPACK's /dpotrf/.
 cholS :: Matrix Float -> Matrix Float
-cholS =  unsafePerformIO . cholAux dpotrf "cholS"
+cholS =  unsafePerformIO . cholAux spotrf "cholS"
 
 -- | Cholesky factorization of a complex Hermitian positive definite matrix, using LAPACK's /zpotrf/ ('Maybe' version).
 mbCholH :: Matrix (Complex Float) -> Maybe (Matrix (Complex Float))
-mbCholH = unsafePerformIO . mbCatch . cholAux zpotrf "cholH"
+mbCholH = unsafePerformIO . mbCatch . cholAux cpotrf "cholH"
 
 -- | Cholesky factorization of a real symmetric positive definite matrix, using LAPACK's /dpotrf/  ('Maybe' version).
 mbCholS :: Matrix Float -> Maybe (Matrix Float)
-mbCholS =  unsafePerformIO . mbCatch . cholAux dpotrf "cholS"
+mbCholS =  unsafePerformIO . mbCatch . cholAux spotrf "cholS"
 
 -----------------------------------------------------------------------------------
 
 type TMVM t = t ::> t :> t ::> Ok
 
-foreign import ccall unsafe "qr_l_R" dgeqr2 :: R :> R ::> Ok
-foreign import ccall unsafe "qr_l_C" zgeqr2 :: C :> C ::> Ok
+-- foreign import ccall unsafe "qr_l_R" dgeqr2 :: R :> R ::> Ok
+-- foreign import ccall unsafe "qr_l_C" zgeqr2 :: C :> C ::> Ok
+
+foreign import ccall unsafe "qr_l_R" sgeqr2 :: R :> R ::> Ok
+foreign import ccall unsafe "qr_l_C" cgeqr2 :: C :> C ::> Ok
+
 
 -- | QR factorization of a real matrix, using LAPACK's /dgeqr2/.
 qrR :: Matrix Float -> (Matrix Float, Vector Float)
-qrR = qrAux dgeqr2 "qrR"
+qrR = qrAux sgeqr2 "qrR"
 
 -- | QR factorization of a complex matrix, using LAPACK's /zgeqr2/.
 qrC :: Matrix (Complex Float) -> (Matrix (Complex Float), Vector (Complex Float))
-qrC = qrAux zgeqr2 "qrC"
+qrC = qrAux cgeqr2 "qrC"
 
 qrAux f st a = unsafePerformIO $ do
     r <- copy ColumnMajor a
@@ -621,15 +648,19 @@ qrAux f st a = unsafePerformIO $ do
     n = cols a
     mn = min m n
 
-foreign import ccall unsafe "c_dorgqr" dorgqr :: R :> R ::> Ok
-foreign import ccall unsafe "c_zungqr" zungqr :: C :> C ::> Ok
+-- foreign import ccall unsafe "c_dorgqr" dorgqr :: R :> R ::> Ok
+-- foreign import ccall unsafe "c_zungqr" zungqr :: C :> C ::> Ok
+
+foreign import ccall unsafe "c_dorgqr" sorgqr :: R :> R ::> Ok
+foreign import ccall unsafe "c_zungqr" cungqr :: C :> C ::> Ok
+
 
 -- | build rotation from reflectors
 qrgrR :: Int -> (Matrix Float, Vector Float) -> Matrix Float
-qrgrR = qrgrAux dorgqr "qrgrR"
+qrgrR = qrgrAux sorgqr "qrgrR"
 -- | build rotation from reflectors
 qrgrC :: Int -> (Matrix (Complex Float), Vector (Complex Float)) -> Matrix (Complex Float)
-qrgrC = qrgrAux zungqr "qrgrC"
+qrgrC = qrgrAux cungqr "qrgrC"
 
 qrgrAux f st n (a, tau) = unsafePerformIO $ do
     res <- copy ColumnMajor (subMatrix (0,0) (rows a,n) a)
@@ -639,16 +670,19 @@ qrgrAux f st n (a, tau) = unsafePerformIO $ do
     tau' = vjoin [tau, constantD 0 n]
 
 -----------------------------------------------------------------------------------
-foreign import ccall unsafe "hess_l_R" dgehrd :: R :> R ::> Ok
-foreign import ccall unsafe "hess_l_C" zgehrd :: C :> C ::> Ok
+-- foreign import ccall unsafe "hess_l_R" dgehrd :: R :> R ::> Ok
+-- foreign import ccall unsafe "hess_l_C" zgehrd :: C :> C ::> Ok
+
+foreign import ccall unsafe "hess_l_R" sgehrd :: R :> R ::> Ok
+foreign import ccall unsafe "hess_l_C" cgehrd :: C :> C ::> Ok
 
 -- | Hessenberg factorization of a square real matrix, using LAPACK's /dgehrd/.
 hessR :: Matrix Float -> (Matrix Float, Vector Float)
-hessR = hessAux dgehrd "hessR"
+hessR = hessAux sgehrd "hessR"
 
 -- | Hessenberg factorization of a square complex matrix, using LAPACK's /zgehrd/.
 hessC :: Matrix (Complex Float) -> (Matrix (Complex Float), Vector (Complex Float))
-hessC = hessAux zgehrd "hessC"
+hessC = hessAux cgehrd "hessC"
 
 hessAux f st a = unsafePerformIO $ do
     r <- copy ColumnMajor a
@@ -661,16 +695,20 @@ hessAux f st a = unsafePerformIO $ do
     mn = min m n
 
 -----------------------------------------------------------------------------------
-foreign import ccall unsafe "schur_l_R" dgees :: R ::> R ::> Ok
-foreign import ccall unsafe "schur_l_C" zgees :: C ::> C ::> Ok
+-- foreign import ccall unsafe "schur_l_R" dgees :: R ::> R ::> Ok
+-- foreign import ccall unsafe "schur_l_C" zgees :: C ::> C ::> Ok
+
+foreign import ccall unsafe "schur_l_R" sgees :: R ::> R ::> Ok
+foreign import ccall unsafe "schur_l_C" cgees :: C ::> C ::> Ok
+
 
 -- | Schur factorization of a square real matrix, using LAPACK's /dgees/.
 schurR :: Matrix Float -> (Matrix Float, Matrix Float)
-schurR = schurAux dgees "schurR"
+schurR = schurAux sgees "schurR"
 
 -- | Schur factorization of a square complex matrix, using LAPACK's /zgees/.
 schurC :: Matrix (Complex Float) -> (Matrix (Complex Float), Matrix (Complex Float))
-schurC = schurAux zgees "schurC"
+schurC = schurAux cgees "schurC"
 
 schurAux f st a = unsafePerformIO $ do
     u <- createMatrix ColumnMajor n n
@@ -681,16 +719,19 @@ schurAux f st a = unsafePerformIO $ do
     n = rows a
 
 -----------------------------------------------------------------------------------
-foreign import ccall unsafe "lu_l_R" dgetrf :: R :> R ::> Ok
-foreign import ccall unsafe "lu_l_C" zgetrf :: R :> C ::> Ok
+-- foreign import ccall unsafe "lu_l_R" dgetrf :: R :> R ::> Ok
+-- foreign import ccall unsafe "lu_l_C" zgetrf :: R :> C ::> Ok
+
+foreign import ccall unsafe "lu_l_R" sgetrf :: R :> R ::> Ok
+foreign import ccall unsafe "lu_l_C" cgetrf :: R :> C ::> Ok
 
 -- | LU factorization of a general real matrix, using LAPACK's /dgetrf/.
 luR :: Matrix Float -> (Matrix Float, [Int])
-luR = luAux dgetrf "luR"
+luR = luAux sgetrf "luR"
 
 -- | LU factorization of a general complex matrix, using LAPACK's /zgetrf/.
 luC :: Matrix (Complex Float) -> (Matrix (Complex Float), [Int])
-luC = luAux zgetrf "luC"
+luC = luAux cgetrf "luC"
 
 luAux f st a = unsafePerformIO $ do
     lu <- copy ColumnMajor a
@@ -703,16 +744,20 @@ luAux f st a = unsafePerformIO $ do
 
 -----------------------------------------------------------------------------------
 
-foreign import ccall unsafe "luS_l_R" dgetrs :: R ::> R :> R ::> Ok
-foreign import ccall unsafe "luS_l_C" zgetrs :: C ::> R :> C ::> Ok
+-- foreign import ccall unsafe "luS_l_R" dgetrs :: R ::> R :> R ::> Ok
+-- foreign import ccall unsafe "luS_l_C" zgetrs :: C ::> R :> C ::> Ok
+
+foreign import ccall unsafe "luS_l_R" sgetrs :: R ::> R :> R ::> Ok
+foreign import ccall unsafe "luS_l_C" cgetrs :: C ::> R :> C ::> Ok
+
 
 -- | Solve a real linear system from a precomputed LU decomposition ('luR'), using LAPACK's /dgetrs/.
 lusR :: Matrix Float -> [Int] -> Matrix Float -> Matrix Float
-lusR a piv b = lusAux dgetrs "lusR" (fmat a) piv b
+lusR a piv b = lusAux sgetrs "lusR" (fmat a) piv b
 
 -- | Solve a complex linear system from a precomputed LU decomposition ('luC'), using LAPACK's /zgetrs/.
 lusC :: Matrix (Complex Float) -> [Int] -> Matrix (Complex Float) -> Matrix (Complex Float)
-lusC a piv b = lusAux zgetrs "lusC" (fmat a) piv b
+lusC a piv b = lusAux cgetrs "lusC" (fmat a) piv b
 
 lusAux f st a piv b
     | n1==n2 && n2==n =unsafePerformIO $ do
@@ -727,16 +772,20 @@ lusAux f st a piv b
     piv' = fromList (map (fromIntegral.succ) piv) :: Vector Float
 
 -----------------------------------------------------------------------------------
-foreign import ccall unsafe "ldl_R" dsytrf :: R :> R ::> Ok
-foreign import ccall unsafe "ldl_C" zhetrf :: R :> C ::> Ok
+-- foreign import ccall unsafe "ldl_R" dsytrf :: R :> R ::> Ok
+-- foreign import ccall unsafe "ldl_C" zhetrf :: R :> C ::> Ok
+
+foreign import ccall unsafe "ldl_R" ssytrf :: R :> R ::> Ok
+foreign import ccall unsafe "ldl_C" chetrf :: R :> C ::> Ok
+
 
 -- | LDL factorization of a symmetric real matrix, using LAPACK's /dsytrf/.
 ldlR :: Matrix Float -> (Matrix Float, [Int])
-ldlR = ldlAux dsytrf "ldlR"
+ldlR = ldlAux ssytrf "ldlR"
 
 -- | LDL factorization of a hermitian complex matrix, using LAPACK's /zhetrf/.
 ldlC :: Matrix (Complex Float) -> (Matrix (Complex Float), [Int])
-ldlC = ldlAux zhetrf "ldlC"
+ldlC = ldlAux chetrf "ldlC"
 
 ldlAux f st a = unsafePerformIO $ do
     ldl <- copy ColumnMajor a
@@ -746,13 +795,17 @@ ldlAux f st a = unsafePerformIO $ do
 
 -----------------------------------------------------------------------------------
 
-foreign import ccall unsafe "ldl_S_R" dsytrs :: R ::> R :> R ::> Ok
-foreign import ccall unsafe "ldl_S_C" zsytrs :: C ::> R :> C ::> Ok
+-- foreign import ccall unsafe "ldl_S_R" dsytrs :: R ::> R :> R ::> Ok
+-- foreign import ccall unsafe "ldl_S_C" zsytrs :: C ::> R :> C ::> Ok
+
+foreign import ccall unsafe "ldl_S_R" ssytrs :: R ::> R :> R ::> Ok
+foreign import ccall unsafe "ldl_S_C" csytrs :: C ::> R :> C ::> Ok
+
 
 -- | Solve a real linear system from a precomputed LDL decomposition ('ldlR'), using LAPACK's /dsytrs/.
 ldlsR :: Matrix Float -> [Int] -> Matrix Float -> Matrix Float
-ldlsR a piv b = lusAux dsytrs "ldlsR" (fmat a) piv b
+ldlsR a piv b = lusAux ssytrs "ldlsR" (fmat a) piv b
 
 -- | Solve a complex linear system from a precomputed LDL decomposition ('ldlC'), using LAPACK's /zsytrs/.
 ldlsC :: Matrix (Complex Float) -> [Int] -> Matrix (Complex Float) -> Matrix (Complex Float)
-ldlsC a piv b = lusAux zsytrs "ldlsC" (fmat a) piv b
+ldlsC a piv b = lusAux csytrs "ldlsC" (fmat a) piv b

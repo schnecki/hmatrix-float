@@ -407,13 +407,13 @@ instance Indexable (Vector Z) Z
   where
     (!) = (@>)
 
-instance Indexable (Vector (Complex Float)) (Complex Float)
-  where
-    (!) = (@>)
-
 -- instance Indexable (Vector (Complex Float)) (Complex Float)
 --   where
 --     (!) = (@>)
+
+instance Indexable (Vector (Complex Float)) (Complex Float)
+  where
+    (!) = (@>)
 
 instance Element t => Indexable (Matrix t) (Vector t)
   where

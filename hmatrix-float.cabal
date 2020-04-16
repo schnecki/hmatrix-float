@@ -2,10 +2,10 @@ Name:               hmatrix-float
 Version:            0.20.0.0
 License:            BSD3
 License-file:       LICENSE
-Author:             Alberto Ruiz
-Maintainer:         Alberto Ruiz
+Author:             Alberto Ruiz, Manuel Schneckenreither
+Maintainer:         Alberto Ruiz, Manuel Schneckenreither
 Stability:          provisional
-Homepage:           https://github.com/albertoruiz/hmatrix
+Homepage:           https://github.com/schnecki/hmatrix-float
 Synopsis:           Numeric Linear Algebra
 Description:        Linear systems, matrix decompositions, and other numerical computations based on BLAS and LAPACK.
                     .
@@ -22,7 +22,7 @@ cabal-version:      >=1.8
 
 build-type:         Simple
 
-extra-source-files: THANKS.md CHANGELOG
+extra-source-files: THANKS.md CHANGELOG README.md
 
 extra-source-files: src/Internal/C/lapack-aux.h
 
@@ -85,8 +85,8 @@ library
                         Internal.Modular
                         Internal.Static
 
-    C-sources:          src/Internal/C/lapack-aux.c
-                        src/Internal/C/vector-aux.c
+    C-sources:          src/Internal/C/lapack-aux-float.c
+                        src/Internal/C/vector-aux-float.c
 
 
     extensions:         ForeignFunctionInterface
@@ -95,6 +95,7 @@ library
                         -fno-warn-missing-signatures
                         -fno-warn-orphans
                         -fno-prof-auto
+                        -Werror
 
     cc-options:         -O4 -Wall
 
@@ -157,5 +158,30 @@ library
 
 source-repository head
     type:     git
-    location: https://github.com/albertoruiz/hmatrix
+    location: https://github.com/schnecki/hmatrix-float
+
+
+test-suite hmatrix-base-testsuite
+    type: exitcode-stdio-1.0
+    main-is: Test/TestBase.hs
+    other-modules:
+        Test.Numeric.LinearAlgebra.Tests
+        Test.Numeric.LinearAlgebra.Tests.Instances
+        Test.Numeric.LinearAlgebra.Tests.Properties
+
+    build-depends:      base >= 4 && < 5, hmatrix-float,
+                        QuickCheck >= 2, HUnit, random, binary, deepseq
+    hs-source-dirs:     tests
+
+benchmark hmatrix-base-benchmark
+    type:               exitcode-stdio-1.0
+    main-is:            Benchmark.hs
+    build-depends:      base >= 4 && < 5,
+                        hmatrix-float,
+                        QuickCheck >= 2, HUnit, random, binary, deepseq
+    hs-source-dirs:     bench, tests
+    other-modules:
+        Test.Numeric.LinearAlgebra.Tests
+        Test.Numeric.LinearAlgebra.Tests.Instances
+        Test.Numeric.LinearAlgebra.Tests.Properties
 

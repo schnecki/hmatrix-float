@@ -22,22 +22,22 @@ module Internal.Chain (
                       optimiseMult,
                      ) where
 
-import           Data.Maybe
+import Data.Maybe
 
-import           Internal.Matrix
-import           Internal.Numeric
+import Internal.Matrix
+import Internal.Numeric
 
 import qualified Data.Array.IArray as A
 
 -----------------------------------------------------------------------------
-{- |
-     Provide optimal association order for a chain of matrix multiplications
+{- | 
+     Provide optimal association order for a chain of matrix multiplications 
      and apply the multiplications.
 
      The algorithm is the well-known O(n\^3) dynamic programming algorithm
      that builds a pyramid of optimal associations.
 
-> m1, m2, m3, m4 :: Matrix Float
+> m1, m2, m3, m4 :: Matrix Double
 > m1 = (10><15) [1..]
 > m2 = (15><20) [1..]
 > m3 = (20><5) [1..]
@@ -94,7 +94,7 @@ chain_cost mz = let (_,u) = A.bounds mz
                 in i
 
 chain_cost' :: (Sizes,Cost,Indexes) -> (Int,Int) -> (Sizes,Cost,Indexes)
-chain_cost' sci@(mz,cost,ixes) (r,c)
+chain_cost' sci@(mz,cost,ixes) (r,c) 
     | c == 1                     = let cost' = update cost (r,c) (Just 0)
                                        ixes' = update ixes (r,c) (Just ((r,c),(r,c)))
                                        in (mz,cost',ixes')
@@ -120,7 +120,7 @@ smaller_cost (r,c) (mz,cost,ixes) ix@((lr,lc),(rr,rc)) =
                               ixes'' = update ixes (r,c) (Just ix)
                           in (mz,cost'',ixes'')
                           else (mz,cost,ixes)
-
+                                                                         
 
 fulcrum_order (r,c) = let fs' = zip (repeat r) [1..(c-1)]
                       in map (partner (r,c)) fs'
@@ -133,14 +133,14 @@ order n = order (n-1) ++ zip (repeat n) [1..n]
 chain_paren :: Product a => (Int,Int) -> Indexes -> Matrices a -> Matrix a
 chain_paren (r,c) ixes ma = let ((lr,lc),(rr,rc)) = fromJust $ (ixes A.! r) A.! c
                             in if lr == rr && lc == rc then (ma A.! lr)
-                               else (chain_paren (lr,lc) ixes ma) `multiply` (chain_paren (rr,rc) ixes ma)
+                               else (chain_paren (lr,lc) ixes ma) `multiply` (chain_paren (rr,rc) ixes ma) 
 
 --------------------------------------------------------------------------
 
 {- TESTS
 
 -- optimal association is ((m1*(m2*m3))*m4)
-m1, m2, m3, m4 :: Matrix Float
+m1, m2, m3, m4 :: Matrix Double
 m1 = (10><15) [1..]
 m2 = (15><20) [1..]
 m3 = (20><5) [1..]

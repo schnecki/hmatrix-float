@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP              #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleContexts #-}
 -----------------------------------------------------------------------------
 {- |
@@ -18,14 +18,14 @@ module Internal.Convolution(
 ) where
 
 import qualified Data.Vector.Storable as SV
-import           Internal.Container
-import           Internal.Conversion
-import           Internal.Element
-import           Internal.Matrix
-import           Internal.Numeric
-import           Internal.Vector
+import Internal.Vector
+import Internal.Matrix
+import Internal.Numeric
+import Internal.Element
+import Internal.Conversion
+import Internal.Container
 #if MIN_VERSION_base(4,11,0)
-import           Prelude              hiding ((<>))
+import Prelude hiding ((<>))
 #endif
 
 
@@ -81,6 +81,7 @@ corrMin ker v
     ones = konst 1 (dim ker)
 
 
+
 matSS :: Element t => Int -> Matrix t -> [Matrix t]
 matSS dr m = map (reshape c) [ subVector (k*c) n v | k <- [0 .. r - dr] ]
   where
@@ -92,7 +93,7 @@ matSS dr m = map (reshape c) [ subVector (k*c) n v | k <- [0 .. r - dr] ]
 
 {- | 2D correlation (without padding)
 
->>> disp 5 $ corr2 (konst 1 (3,3)) (ident 10 :: Matrix Float)
+>>> disp 5 $ corr2 (konst 1 (3,3)) (ident 10 :: Matrix Double)
 8x8
 3  2  1  0  0  0  0  0
 2  3  2  1  0  0  0  0
@@ -121,7 +122,7 @@ corr2 ker mat = dims
 
 {- | 2D convolution
 
->>> disp 5 $ conv2 (konst 1 (3,3)) (ident 10 :: Matrix Float)
+>>> disp 5 $ conv2 (konst 1 (3,3)) (ident 10 :: Matrix Double)
 12x12
 1  1  1  0  0  0  0  0  0  0  0  0
 1  2  2  1  0  0  0  0  0  0  0  0

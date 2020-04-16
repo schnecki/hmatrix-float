@@ -1,9 +1,9 @@
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE TypeFamilies           #-}
-{-# LANGUAGE UndecidableInstances   #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 
@@ -19,16 +19,15 @@
 
 module Internal.Numeric where
 
-import           Data.List.Split      (chunksOf)
+import Internal.Vector
+import Internal.Matrix
+import Internal.Element
+import Internal.ST as ST
+import Internal.Conversion
+import Internal.Vectorized
+import Internal.LAPACK (multiplyF,multiplyQ,multiplyI,multiplyL)
+import Data.List.Split(chunksOf)
 import qualified Data.Vector.Storable as V
-import           Internal.Conversion
-import           Internal.Element
-import           Internal.LAPACK      (multiplyC, multiplyF, multiplyI, multiplyL,
-                                       multiplyQ, multiplyR)
-import           Internal.Matrix
-import           Internal.ST          as ST
-import           Internal.Vector
-import           Internal.Vectorized
 import           Data.Kind                         (Type)
 
 --------------------------------------------------------------------------------
@@ -210,10 +209,10 @@ instance Container Vector Float
     fromInt' = int2floatV
     toInt'   = float2IntV
     fromZ'   = (single :: Vector R-> Vector Float) . fromZ'
-    toZ'     = toZ' . double
+    toZ'     = toZ' . single
 
 
--- instance Container Vector Float
+-- instance Container Vector Double
 --   where
 --     conj' = id
 --     size' = dim
@@ -244,57 +243,21 @@ instance Container Vector Float
 --     divide = vectorZipR Div
 --     arctan2' = vectorZipR ATan2
 --     cmod' = undefined
---     fromInt' = int2FloatV
+--     fromInt' = int2DoubleV
 --     toInt'   = double2IntV
---     fromZ'   = long2FloatV
+--     fromZ'   = long2DoubleV
 --     toZ'     = double2longV
 
 
-instance Container Vector (Complex Float)
-  where
-    conj' = conjugateC
-    size' = dim
-    scale' = vectorMapValC Scale
-    addConstant = vectorMapValC AddConstant
-    add' = vectorZipC Add
-    sub = vectorZipC Sub
-    mul = vectorZipC Mul
-    equal = (==)
-    scalar' = V.singleton
-    konst' = constantD
-    build' = buildV
-    cmap' = mapVector
-    atIndex' = (@>)
-    minIndex'     = emptyErrorV "minIndex" (minIndex' . fst . fromComplex . (mul <*> conj'))
-    maxIndex'     = emptyErrorV "maxIndex" (maxIndex' . fst . fromComplex . (mul <*> conj'))
-    minElement'   = emptyErrorV "minElement" (atIndex' <*> minIndex')
-    maxElement'   = emptyErrorV "maxElement" (atIndex' <*> maxIndex')
-    sumElements'  = sumC
-    prodElements' = prodC
-    step' = undefined -- cannot match
-    find' = findV
-    assoc' = assocV
-    accum' = accumV
-    ccompare' = undefined -- cannot match
-    cselect' = selectCV selectV
-    scaleRecip = vectorMapValC Recip
-    divide = vectorZipC Div
-    arctan2' = vectorZipC ATan2
-    cmod' = undefined
-    fromInt' = complex . int2FloatV
-    toInt'   = toInt' . fst . fromComplex
-    fromZ'   = complex . long2FloatV
-    toZ'     = toZ' . fst . fromComplex
-
--- instance Container Vector (Complex Float)
+-- instance Container Vector (Complex Double)
 --   where
---     conj' = conjugateQ
+--     conj' = conjugateC
 --     size' = dim
---     scale' = vectorMapValQ Scale
---     addConstant = vectorMapValQ AddConstant
---     add' = vectorZipQ Add
---     sub = vectorZipQ Sub
---     mul = vectorZipQ Mul
+--     scale' = vectorMapValC Scale
+--     addConstant = vectorMapValC AddConstant
+--     add' = vectorZipC Add
+--     sub = vectorZipC Sub
+--     mul = vectorZipC Mul
 --     equal = (==)
 --     scalar' = V.singleton
 --     konst' = constantD
@@ -305,22 +268,58 @@ instance Container Vector (Complex Float)
 --     maxIndex'     = emptyErrorV "maxIndex" (maxIndex' . fst . fromComplex . (mul <*> conj'))
 --     minElement'   = emptyErrorV "minElement" (atIndex' <*> minIndex')
 --     maxElement'   = emptyErrorV "maxElement" (atIndex' <*> maxIndex')
---     sumElements'  = sumQ
---     prodElements' = prodQ
+--     sumElements'  = sumC
+--     prodElements' = prodC
 --     step' = undefined -- cannot match
 --     find' = findV
 --     assoc' = assocV
 --     accum' = accumV
 --     ccompare' = undefined -- cannot match
 --     cselect' = selectCV selectV
---     scaleRecip = vectorMapValQ Recip
---     divide = vectorZipQ Div
---     arctan2' = vectorZipQ ATan2
+--     scaleRecip = vectorMapValC Recip
+--     divide = vectorZipC Div
+--     arctan2' = vectorZipC ATan2
 --     cmod' = undefined
---     fromInt' = complex . int2floatV
+--     fromInt' = complex . int2DoubleV
 --     toInt'   = toInt' . fst . fromComplex
---     fromZ' = complex . single . long2FloatV
---     toZ'   = toZ' . double . fst . fromComplex
+--     fromZ'   = complex . long2DoubleV
+--     toZ'     = toZ' . fst . fromComplex
+
+instance Container Vector (Complex Float)
+  where
+    conj' = conjugateQ
+    size' = dim
+    scale' = vectorMapValQ Scale
+    addConstant = vectorMapValQ AddConstant
+    add' = vectorZipQ Add
+    sub = vectorZipQ Sub
+    mul = vectorZipQ Mul
+    equal = (==)
+    scalar' = V.singleton
+    konst' = constantD
+    build' = buildV
+    cmap' = mapVector
+    atIndex' = (@>)
+    minIndex'     = emptyErrorV "minIndex" (minIndex' . fst . fromComplex . (mul <*> conj'))
+    maxIndex'     = emptyErrorV "maxIndex" (maxIndex' . fst . fromComplex . (mul <*> conj'))
+    minElement'   = emptyErrorV "minElement" (atIndex' <*> minIndex')
+    maxElement'   = emptyErrorV "maxElement" (atIndex' <*> maxIndex')
+    sumElements'  = sumQ
+    prodElements' = prodQ
+    step' = undefined -- cannot match
+    find' = findV
+    assoc' = assocV
+    accum' = accumV
+    ccompare' = undefined -- cannot match
+    cselect' = selectCV selectV
+    scaleRecip = vectorMapValQ Recip
+    divide = vectorZipQ Div
+    arctan2' = vectorZipQ ATan2
+    cmod' = undefined
+    fromInt' = complex . int2floatV
+    toInt'   = toInt' . fst . fromComplex
+    fromZ' = complex . single . long2FloatV
+    toZ'   = toZ' . single . fst . fromComplex
 
 ---------------------------------------------------------------
 
@@ -379,7 +378,7 @@ emptyErrorM msg f m =
 
 -- | create a structure with a single element
 --
--- >>> let v = fromList [1..3::Float]
+-- >>> let v = fromList [1..3::Double]
 -- >>> v / scalar (norm2 v)
 -- fromList [0.2672612419124244,0.5345224838248488,0.8017837257372732]
 --
@@ -402,7 +401,7 @@ cmod :: (Integral e, Container c e) => e -> c e -> c e
 cmod = cmod'
 
 -- |
--- >>>fromInt ((2><2) [0..3]) :: Matrix (Complex Float)
+-- >>>fromInt ((2><2) [0..3]) :: Matrix (Complex Double)
 -- (2><2)
 -- [ 0.0 :+ 0.0, 1.0 :+ 0.0
 -- , 2.0 :+ 0.0, 3.0 :+ 0.0 ]
@@ -461,7 +460,7 @@ prodElements = prodElements'
 
 -- | A more efficient implementation of @cmap (\\x -> if x>0 then 1 else 0)@
 --
--- >>> step $ linspace 5 (-1,1::Float)
+-- >>> step $ linspace 5 (-1,1::Double)
 -- 5 |> [0.0,0.0,0.0,1.0,1.0]
 --
 step
@@ -475,7 +474,7 @@ step = step'
 --
 -- Arguments with any dimension = 1 are automatically expanded:
 --
--- >>> cond ((1><4)[1..]) ((3><1)[1..]) 0 100 ((3><4)[1..]) :: Matrix Float
+-- >>> cond ((1><4)[1..]) ((3><1)[1..]) 0 100 ((3><4)[1..]) :: Matrix Double
 -- (3><4)
 -- [ 100.0,   2.0,   3.0,  4.0
 -- ,   0.0, 100.0,   7.0,  8.0
@@ -496,7 +495,7 @@ cond a b l e g = cselect' (ccompare' a b) l e g
 
 -- | Find index of elements which satisfy a predicate
 --
--- >>> find (>0) (ident 3 :: Matrix Float)
+-- >>> find (>0) (ident 3 :: Matrix Double)
 -- [(0,0),(1,1),(2,2)]
 --
 find
@@ -509,10 +508,10 @@ find = find'
 
 -- | Create a structure from an association list
 --
--- >>> assoc 5 0 [(3,7),(1,4)] :: Vector Float
+-- >>> assoc 5 0 [(3,7),(1,4)] :: Vector Double
 -- fromList [0.0,4.0,0.0,7.0,0.0]
 --
--- >>> assoc (2,3) 0 [((0,2),7),((1,0),2*i-3)] :: Matrix (Complex Float)
+-- >>> assoc (2,3) 0 [((0,2),7),((1,0),2*i-3)] :: Matrix (Complex Double)
 -- (2><3)
 --  [    0.0 :+ 0.0, 0.0 :+ 0.0, 7.0 :+ 0.0
 --  , (-3.0) :+ 2.0, 0.0 :+ 0.0, 0.0 :+ 0.0 ]
@@ -528,7 +527,7 @@ assoc = assoc'
 
 -- | Modify a structure using an update function
 --
--- >>> accum (ident 5) (+) [((1,1),5),((0,3),3)] :: Matrix Float
+-- >>> accum (ident 5) (+) [((1,1),5),((0,3),3)] :: Matrix Double
 -- (5><5)
 --  [ 1.0, 0.0, 0.0, 3.0, 0.0
 --  , 0.0, 6.0, 0.0, 0.0, 0.0
@@ -538,7 +537,7 @@ assoc = assoc'
 --
 -- computation of histogram:
 --
--- >>> accum (konst 0 7) (+) (map (flip (,) 1) [4,5,4,1,5,2,5]) :: Vector Float
+-- >>> accum (konst 0 7) (+) (map (flip (,) 1) [4,5,4,1,5,2,5]) :: Vector Double
 -- fromList [0.0,1.0,1.0,0.0,2.0,3.0,0.0]
 --
 accum
@@ -587,10 +586,10 @@ class ( Container Vector t
       , Linear t Matrix
       ) => Numeric t
 
+-- instance Numeric Double
+-- instance Numeric (Complex Double)
 instance Numeric Float
 instance Numeric (Complex Float)
--- instance Numeric Float
--- instance Numeric (Complex Float)
 instance Numeric I
 instance Numeric Z
 
@@ -618,7 +617,7 @@ instance Product Float where
     normInf    = emptyVal (maxElement . vectorMapF Abs)
     multiply   = emptyMul multiplyF
 
--- instance Product Float where
+-- instance Product Double where
 --     norm2      = emptyVal (toScalarR Norm2)
 --     absSum     = emptyVal (toScalarR AbsSum)
 --     norm1      = emptyVal (toScalarR AbsSum)
@@ -632,7 +631,7 @@ instance Product (Complex Float) where
     normInf    = emptyVal (maxElement . fst . fromComplex . vectorMapQ Abs)
     multiply   = emptyMul multiplyQ
 
--- instance Product (Complex Float) where
+-- instance Product (Complex Double) where
 --     norm2      = emptyVal (toScalarC Norm2)
 --     absSum     = emptyVal (toScalarC AbsSum)
 --     norm1      = emptyVal (sumElements . fst . fromComplex . vectorMapC Abs)
@@ -741,49 +740,49 @@ class Convert t where
     real    :: Complexable c => c (RealOf t) -> c t
     complex :: Complexable c => c t -> c (ComplexOf t)
     single  :: Complexable c => c t -> c (SingleOf t)
-    double  :: Complexable c => c t -> c (FloatOf t)
+    -- double  :: Complexable c => c t -> c (DoubleOf t)
     toComplex   :: (Complexable c, RealElement t) => (c t, c t) -> c (Complex t)
     fromComplex :: (Complexable c, RealElement t) => c (Complex t) -> (c t, c t)
 
 
+-- instance Convert Double where
+--     real = id
+--     complex = comp'
+--     single = single'
+--     -- double = id
+--     toComplex = toComplex'
+--     fromComplex = fromComplex'
+
 instance Convert Float where
     real = id
     complex = comp'
-    single = single'
-    double = id
+    single = id
+    -- double = double'
     toComplex = toComplex'
     fromComplex = fromComplex'
 
--- instance Convert Float where
---     real = id
---     complex = comp'
---     single = id
---     double = double'
+-- instance Convert (Complex Double) where
+--     real = comp'
+--     complex = id
+--     single = single'
+--     -- double = id
 --     toComplex = toComplex'
 --     fromComplex = fromComplex'
 
 instance Convert (Complex Float) where
     real = comp'
     complex = id
-    single = single'
-    double = id
+    single = id
+    -- double = double'
     toComplex = toComplex'
     fromComplex = fromComplex'
-
--- instance Convert (Complex Float) where
---     real = comp'
---     complex = id
---     single = id
---     double = double'
---     toComplex = toComplex'
---     fromComplex = fromComplex'
 
 -------------------------------------------------------------------
 
 type family RealOf x
 
-type instance RealOf Float = Float
-type instance RealOf (Complex Float) = Float
+type instance RealOf Double = Double
+type instance RealOf (Complex Double) = Double
 
 type instance RealOf Float = Float
 type instance RealOf (Complex Float) = Float
@@ -795,17 +794,17 @@ type ComplexOf x = Complex (RealOf x)
 
 type family SingleOf x
 
-type instance SingleOf Float = Float
+type instance SingleOf Double = Float
 type instance SingleOf Float  = Float
 
 type instance SingleOf (Complex a) = Complex (SingleOf a)
 
-type family FloatOf x
+type family DoubleOf x
 
-type instance FloatOf Float = Float
-type instance FloatOf Float  = Float
+type instance DoubleOf Double = Double
+type instance DoubleOf Float  = Double
 
-type instance FloatOf (Complex a) = Complex (FloatOf a)
+type instance DoubleOf (Complex a) = Complex (DoubleOf a)
 
 type family ElementOf c
 
@@ -885,18 +884,12 @@ class CTrans t
     ctrans :: Matrix t -> Matrix t
     ctrans = trans
 
--- instance CTrans Float
 instance CTrans R
 instance CTrans I
 instance CTrans Z
-
 instance CTrans C
   where
     ctrans = conj . trans
-
--- instance CTrans (Complex Float)
---   where
---     ctrans = conj . trans
 
 class Transposable m mt | m -> mt, mt -> m
   where

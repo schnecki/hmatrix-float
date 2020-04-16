@@ -1,8 +1,8 @@
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE UndecidableInstances  #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -22,23 +22,23 @@
 
 module Internal.Element where
 
-import           Control.Monad       (liftM)
-import           Data.Array
-import           Data.List           (intersperse, transpose)
-import           Data.List.Split     (chunksOf)
-import           Foreign.C.Types     (CInt)
-import           Foreign.Storable    (Storable)
-import           Internal.Matrix
-import qualified Internal.ST         as ST
-import           Internal.Vector
-import           Internal.Vectorized
-import           System.IO.Unsafe    (unsafePerformIO)
-import           Text.Printf
+import Internal.Vector
+import Internal.Matrix
+import Internal.Vectorized
+import qualified Internal.ST as ST
+import Data.Array
+import Text.Printf
+import Data.List(transpose,intersperse)
+import Data.List.Split(chunksOf)
+import Foreign.Storable(Storable)
+import System.IO.Unsafe(unsafePerformIO)
+import Control.Monad(liftM)
+import Foreign.C.Types(CInt)
 
 -------------------------------------------------------------------
 
 
-import           Data.Binary
+import Data.Binary
 
 instance (Binary (Vector a), Element a) => Binary (Matrix a) where
     put m = do
@@ -96,15 +96,15 @@ data Extractor
   deriving Show
 
 ppext :: Extractor -> [Char]
-ppext All           = ":"
+ppext All = ":"
 ppext (Range a 1 c) = printf "%d:%d" a c
 ppext (Range a b c) = printf "%d:%d:%d" a b c
-ppext (Pos v)       = show (toList v)
-ppext (PosCyc v)    = "Cyclic"++show (toList v)
-ppext (Take n)      = printf "Take %d" n
-ppext (Drop n)      = printf "Drop %d" n
-ppext (TakeLast n)  = printf "TakeLast %d" n
-ppext (DropLast n)  = printf "DropLast %d" n
+ppext (Pos v) = show (toList v)
+ppext (PosCyc v) = "Cyclic"++show (toList v)
+ppext (Take n) = printf "Take %d" n
+ppext (Drop n) = printf "Drop %d" n
+ppext (TakeLast n) = printf "TakeLast %d" n
+ppext (DropLast n) = printf "DropLast %d" n
 
 {- | General matrix slicing.
 
@@ -203,8 +203,8 @@ common :: (Eq a) => (b->a) -> [b] -> Maybe a
 common f = commonval . map f
   where
     commonval :: (Eq a) => [a] -> Maybe a
-    commonval []       = Nothing
-    commonval [a]      = Just a
+    commonval [] = Nothing
+    commonval [a] = Just a
     commonval (a:b:xs) = if a==b then commonval (b:xs) else Nothing
 
 
@@ -249,7 +249,7 @@ fromBlocksRaw mms = joinVert . map joinHoriz $ mms
 adaptBlocks :: Element t => [[Matrix t]] -> [[Matrix t]]
 adaptBlocks ms = ms' where
     bc = case common length ms of
-          Just c  -> c
+          Just c -> c
           Nothing -> error "fromBlocks requires rectangular [[Matrix]]"
     rs = map (compatdim . map rows) ms
     cs = map (compatdim . map cols) (transpose ms)
@@ -282,7 +282,7 @@ adaptBlocks ms = ms' where
 0  0  0  0  0  0  0  5
 0  0  0  0  0  0  0  7
 
->>> diagBlock [(0><4)[], konst 2 (2,3)]  :: Matrix Float
+>>> diagBlock [(0><4)[], konst 2 (2,3)]  :: Matrix Double
 (2><7)
  [ 0.0, 0.0, 0.0, 0.0, 2.0, 2.0, 2.0
  , 0.0, 0.0, 0.0, 0.0, 2.0, 2.0, 2.0 ]
@@ -314,7 +314,7 @@ fliprl m = extractColumns [c-1,c-2 .. 0] $ m
 
 {- | creates a rectangular diagonal matrix:
 
->>> diagRect 7 (fromList [10,20,30]) 4 5 :: Matrix Float
+>>> diagRect 7 (fromList [10,20,30]) 4 5 :: Matrix Double
 (4><5)
  [ 10.0,  7.0,  7.0, 7.0, 7.0
  ,  7.0, 20.0,  7.0, 7.0, 7.0
@@ -428,6 +428,7 @@ asColumn :: Storable a => Vector a -> Matrix a
 asColumn v = reshape 1 v
 
 
+
 {- | creates a Matrix of the specified size using the supplied function to
      to map the row\/column position to the value at that row\/column position.
 
@@ -531,7 +532,7 @@ toBlockRows rs m
 
 toBlockCols :: Element t => [Int] -> Matrix t -> [Matrix t]
 toBlockCols [c] m | c == cols m = [m]
-toBlockCols cs m  = map trans . toBlockRows cs . trans $ m
+toBlockCols cs m = map trans . toBlockRows cs . trans $ m
 
 -- | Partition a matrix into blocks with the given numbers of rows and columns.
 -- The remaining rows and columns are discarded.
@@ -565,7 +566,7 @@ mk c g = \k -> g (divMod k c)
 
 {- |
 
->>> mapMatrixWithIndexM_ (\(i,j) v -> printf "m[%d,%d] = %.f\n" i j v :: IO()) ((2><3)[1 :: Float ..])
+>>> mapMatrixWithIndexM_ (\(i,j) v -> printf "m[%d,%d] = %.f\n" i j v :: IO()) ((2><3)[1 :: Double ..])
 m[0,0] = 1
 m[0,1] = 2
 m[0,2] = 3
@@ -583,7 +584,7 @@ mapMatrixWithIndexM_ g m = mapVectorWithIndexM_ (mk c g) . flatten $ m
 
 {- |
 
->>> mapMatrixWithIndexM (\(i,j) v -> Just $ 100*v + 10*fromIntegral i + fromIntegral j) (ident 3:: Matrix Float)
+>>> mapMatrixWithIndexM (\(i,j) v -> Just $ 100*v + 10*fromIntegral i + fromIntegral j) (ident 3:: Matrix Double)
 Just (3><3)
  [ 100.0,   1.0,   2.0
  ,  10.0, 111.0,  12.0
@@ -599,7 +600,7 @@ mapMatrixWithIndexM g m = liftM (reshape c) . mapVectorWithIndexM (mk c g) . fla
 
 {- |
 
->>> mapMatrixWithIndex (\(i,j) v -> 100*v + 10*fromIntegral i + fromIntegral j) (ident 3:: Matrix Float)
+>>> mapMatrixWithIndex (\(i,j) v -> 100*v + 10*fromIntegral i + fromIntegral j) (ident 3:: Matrix Double)
 (3><3)
  [ 100.0,   1.0,   2.0
  ,  10.0, 111.0,  12.0

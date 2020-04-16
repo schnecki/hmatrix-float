@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP              #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleContexts #-}
 
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
@@ -45,7 +45,7 @@ module Numeric.LinearAlgebra (
     -- with just one row or column, automatically
     -- expand to match the dimensions of the other operand:
     --
-    -- >>> 5 + 2*ident 3 :: Matrix Float
+    -- >>> 5 + 2*ident 3 :: Matrix Double
     -- (3><3)
     --  [ 7.0, 5.0, 5.0
     --  , 5.0, 7.0, 5.0
@@ -169,7 +169,7 @@ module Numeric.LinearAlgebra (
     -- * Auxiliary classes
     Element, Container, Product, Numeric, LSDiv, Herm,
     Complexable, RealElement,
-    RealOf, ComplexOf, SingleOf, FloatOf,
+    RealOf, ComplexOf, SingleOf, DoubleOf,
     IndexOf,
     Field, Linear(), Additive(),
     Transposable,
@@ -180,23 +180,22 @@ module Numeric.LinearAlgebra (
     Testable(..)
 ) where
 
-import           Numeric.LinearAlgebra.Data
+import Numeric.LinearAlgebra.Data
 
-import           Internal.Algorithms        hiding (Normed, ldlPacked', linearSolve,
-                                             linearSolve', luPacked', luSolve', orth)
-import qualified Internal.Algorithms        as A
-import           Internal.CG
-import           Internal.Container         hiding ((<>))
-import           Internal.Conversion
-import           Internal.Matrix
-import           Internal.Numeric           hiding (mul)
-import           Internal.Random
-import           Internal.Sparse            ((!#>))
-import           Internal.Util
-import           Numeric.Matrix             ()
-import           Numeric.Vector             ()
+import Numeric.Matrix()
+import Numeric.Vector()
+import Internal.Matrix
+import Internal.Container hiding ((<>))
+import Internal.Numeric hiding (mul)
+import Internal.Algorithms hiding (linearSolve,Normed,orth,luPacked',linearSolve',luSolve',ldlPacked')
+import qualified Internal.Algorithms as A
+import Internal.Util
+import Internal.Random
+import Internal.Sparse((!#>))
+import Internal.CG
+import Internal.Conversion
 #if MIN_VERSION_base(4,11,0)
-import           Prelude                    hiding ((<>))
+import Prelude hiding ((<>))
 #endif
 
 {- | dense matrix product

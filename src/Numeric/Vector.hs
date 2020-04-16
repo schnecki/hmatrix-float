@@ -68,7 +68,7 @@ instance Num (Vector Float) where
     abs = vectorMapF Abs
     fromInteger = fromList . return . fromInteger
 
--- instance Num (Vector Float) where
+-- instance Num (Vector Double) where
 --     (+) = adaptScalar addConstant add (flip addConstant)
 --     negate = scale (-1)
 --     (*) = adaptScalar scale mul (flip scale)
@@ -76,21 +76,21 @@ instance Num (Vector Float) where
 --     abs = vectorMapR Abs
 --     fromInteger = fromList . return . fromInteger
 
+-- instance Num (Vector (Complex Double)) where
+--     (+) = adaptScalar addConstant add (flip addConstant)
+--     negate = scale (-1)
+--     (*) = adaptScalar scale mul (flip scale)
+--     signum = vectorMapC Sign
+--     abs = vectorMapC Abs
+--     fromInteger = fromList . return . fromInteger
+
 instance Num (Vector (Complex Float)) where
     (+) = adaptScalar addConstant add (flip addConstant)
     negate = scale (-1)
     (*) = adaptScalar scale mul (flip scale)
-    signum = vectorMapC Sign
-    abs = vectorMapC Abs
+    signum = vectorMapQ Sign
+    abs = vectorMapQ Abs
     fromInteger = fromList . return . fromInteger
-
--- instance Num (Vector (Complex Float)) where
---     (+) = adaptScalar addConstant add (flip addConstant)
---     negate = scale (-1)
---     (*) = adaptScalar scale mul (flip scale)
---     signum = vectorMapQ Sign
---     abs = vectorMapQ Abs
---     fromInteger = fromList . return . fromInteger
 
 ---------------------------------------------------
 
@@ -123,7 +123,7 @@ instance Floating (Vector Float) where
 
 -------------------------------------------------------------
 
--- instance Floating (Vector Float) where
+-- instance Floating (Vector Double) where
 --     sin   = vectorMapR Sin
 --     cos   = vectorMapR Cos
 --     tan   = vectorMapR Tan
@@ -142,44 +142,44 @@ instance Floating (Vector Float) where
 --     (**)  = adaptScalar (vectorMapValR PowSV) (vectorZipR Pow) (flip (vectorMapValR PowVS))
 --     pi    = fromList [pi]
 
--------------------------------------------------------------
+-- -------------------------------------------------------------
 
-instance Floating (Vector (Complex Float)) where
-    sin   = vectorMapC Sin
-    cos   = vectorMapC Cos
-    tan   = vectorMapC Tan
-    asin  = vectorMapC ASin
-    acos  = vectorMapC ACos
-    atan  = vectorMapC ATan
-    sinh  = vectorMapC Sinh
-    cosh  = vectorMapC Cosh
-    tanh  = vectorMapC Tanh
-    asinh = vectorMapC ASinh
-    acosh = vectorMapC ACosh
-    atanh = vectorMapC ATanh
-    exp   = vectorMapC Exp
-    log   = vectorMapC Log
-    sqrt  = vectorMapC Sqrt
-    (**)  = adaptScalar (vectorMapValC PowSV) (vectorZipC Pow) (flip (vectorMapValC PowVS))
-    pi    = fromList [pi]
+-- instance Floating (Vector (Complex Double)) where
+--     sin   = vectorMapC Sin
+--     cos   = vectorMapC Cos
+--     tan   = vectorMapC Tan
+--     asin  = vectorMapC ASin
+--     acos  = vectorMapC ACos
+--     atan  = vectorMapC ATan
+--     sinh  = vectorMapC Sinh
+--     cosh  = vectorMapC Cosh
+--     tanh  = vectorMapC Tanh
+--     asinh = vectorMapC ASinh
+--     acosh = vectorMapC ACosh
+--     atanh = vectorMapC ATanh
+--     exp   = vectorMapC Exp
+--     log   = vectorMapC Log
+--     sqrt  = vectorMapC Sqrt
+--     (**)  = adaptScalar (vectorMapValC PowSV) (vectorZipC Pow) (flip (vectorMapValC PowVS))
+--     pi    = fromList [pi]
 
 -----------------------------------------------------------
 
--- instance Floating (Vector (Complex Float)) where
---     sin   = vectorMapQ Sin
---     cos   = vectorMapQ Cos
---     tan   = vectorMapQ Tan
---     asin  = vectorMapQ ASin
---     acos  = vectorMapQ ACos
---     atan  = vectorMapQ ATan
---     sinh  = vectorMapQ Sinh
---     cosh  = vectorMapQ Cosh
---     tanh  = vectorMapQ Tanh
---     asinh = vectorMapQ ASinh
---     acosh = vectorMapQ ACosh
---     atanh = vectorMapQ ATanh
---     exp   = vectorMapQ Exp
---     log   = vectorMapQ Log
---     sqrt  = vectorMapQ Sqrt
---     (**)  = adaptScalar (vectorMapValQ PowSV) (vectorZipQ Pow) (flip (vectorMapValQ PowVS))
---     pi    = fromList [pi]
+instance Floating (Vector (Complex Float)) where
+    sin   = vectorMapQ Sin
+    cos   = vectorMapQ Cos
+    tan   = vectorMapQ Tan
+    asin  = vectorMapQ ASin
+    acos  = vectorMapQ ACos
+    atan  = vectorMapQ ATan
+    sinh  = vectorMapQ Sinh
+    cosh  = vectorMapQ Cosh
+    tanh  = vectorMapQ Tanh
+    asinh = vectorMapQ ASinh
+    acosh = vectorMapQ ACosh
+    atanh = vectorMapQ ATanh
+    exp   = vectorMapQ Exp
+    log   = vectorMapQ Log
+    sqrt  = vectorMapQ Sqrt
+    (**)  = adaptScalar (vectorMapValQ PowSV) (vectorZipQ Pow) (flip (vectorMapValQ PowVS))
+    pi    = fromList [pi]

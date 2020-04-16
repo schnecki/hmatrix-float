@@ -34,26 +34,26 @@ import           Internal.Vectorized
 -- | Supported single-double precision type pairs
 class (Element s, Element d) => Precision s d | s -> d, d -> s where
     double2FloatG :: Vector d -> Vector s
-    float2FloatG :: Vector s -> Vector d
+    float2DoubleG :: Vector s -> Vector d
 
-instance Precision Float Float where
-    double2FloatG = double2FloatV
-    float2FloatG = float2FloatV
+-- instance Precision Float Double where
+--     double2FloatG = double2FloatV
+--     float2DoubleG = float2DoubleV
 
-instance Precision (Complex Float) (Complex Float) where
-    double2FloatG = asComplex . double2FloatV . asReal
-    float2FloatG = asComplex . float2FloatV . asReal
+-- instance Precision (Complex Float) (Complex Double) where
+--     double2FloatG = asComplex . double2FloatV . asReal
+--     float2DoubleG = asComplex . float2DoubleV . asReal
 
 instance Precision I Z where
     double2FloatG = long2intV
-    float2FloatG = int2longV
+    float2DoubleG = int2longV
 
 
 -- | Supported real types
 class (Element t, Element (Complex t), RealFloat t)
     => RealElement t
 
--- instance RealElement Float
+-- instance RealElement Double
 instance RealElement Float
 
 
@@ -71,7 +71,7 @@ instance Complexable Vector where
     fromComplex' = fromComplexV
     comp' v = toComplex' (v,constantD 0 (dim v))
     single' = double2FloatG
-    double' = float2FloatG
+    double' = float2DoubleG
 
 
 -- | creates a complex vector from vectors with real and imaginary parts

@@ -40,8 +40,9 @@ import           Internal.Numeric
 import           Internal.ST
 import           Internal.Vector
 import           Internal.Vectorized  (range)
+import           Prelude              hiding ((<>))
 
-{- | Generic linear algebra functions for double precision real and complex matrices.
+{- | Generic linear algebra functions for float precision real and complex matrices.
 
 (Single precision data can be converted using 'single' and 'double').
 
@@ -760,9 +761,9 @@ ranksv teps maxdim s = k where
     s' = filter (>tol) s
     k = if g > teps then length s' else 0
 
--- | The machine precision of a Float: @eps = 2.22044604925031e-16@ (the value used by GNU-Octave).
+-- | The machine precision of a Double: @eps = 2.22044604925031e-16@ (the value used by GNU-Octave).
 eps :: Float
-eps =  2.22044604925031e-16
+eps =  2.22044604925031e-16 -- should be in range
 
 
 -- | 1 + 0.5*peps == 1,  1 + 0.6*peps /= 1
@@ -1034,29 +1035,29 @@ data NormType = Infinity | PNorm1 | PNorm2 | Frobenius
 class (RealFloat (RealOf t)) => Normed c t where
     pnorm :: NormType -> c t -> RealOf t
 
-instance Normed Vector Float where
-    pnorm PNorm1    = norm1
-    pnorm PNorm2    = norm2
-    pnorm Infinity  = normInf
-    pnorm Frobenius = norm2
-
-instance Normed Vector (Complex Float) where
-    pnorm PNorm1    = norm1
-    pnorm PNorm2    = norm2
-    pnorm Infinity  = normInf
-    pnorm Frobenius = pnorm PNorm2
-
 -- instance Normed Vector Float where
 --     pnorm PNorm1    = norm1
 --     pnorm PNorm2    = norm2
 --     pnorm Infinity  = normInf
---     pnorm Frobenius = pnorm PNorm2
+--     pnorm Frobenius = norm2
 
 -- instance Normed Vector (Complex Float) where
 --     pnorm PNorm1    = norm1
 --     pnorm PNorm2    = norm2
 --     pnorm Infinity  = normInf
 --     pnorm Frobenius = pnorm PNorm2
+
+instance Normed Vector Float where
+    pnorm PNorm1    = norm1
+    pnorm PNorm2    = norm2
+    pnorm Infinity  = normInf
+    pnorm Frobenius = pnorm PNorm2
+
+instance Normed Vector (Complex Float) where
+    pnorm PNorm1    = norm1
+    pnorm PNorm2    = norm2
+    pnorm Infinity  = normInf
+    pnorm Frobenius = pnorm PNorm2
 
 
 instance Normed Matrix Float where
@@ -1073,13 +1074,13 @@ instance Normed Matrix (Complex Float) where
 
 -- instance Normed Matrix Float where
 --     pnorm PNorm1    = maximum . map (pnorm PNorm1) . toColumns
---     pnorm PNorm2    = realToFrac . (@>0) . singularValues . double
+--     pnorm PNorm2    = realToFrac . (@>0) . singularValues . float
 --     pnorm Infinity  = pnorm PNorm1 . trans
 --     pnorm Frobenius = pnorm PNorm2 . flatten
 
 -- instance Normed Matrix (Complex Float) where
 --     pnorm PNorm1    = maximum . map (pnorm PNorm1) . toColumns
---     pnorm PNorm2    = realToFrac . (@>0) . singularValues . double
+--     pnorm PNorm2    = realToFrac . (@>0) . singularValues . float
 --     pnorm Infinity  = pnorm PNorm1 . trans
 --     pnorm Frobenius = pnorm PNorm2 . flatten
 
