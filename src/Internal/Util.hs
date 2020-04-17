@@ -417,7 +417,7 @@ instance Indexable (Vector (Complex Float)) (Complex Float)
 
 instance Element t => Indexable (Matrix t) (Vector t)
   where
-    m!j = subVector (j*c) c (flatten m)
+    (!) m j = subVector (j*c) c (flatten m)
       where
         c = cols m
 
